@@ -9,6 +9,6 @@ app.post('/', function(req, res) {
   res.send({ status: 'Success', message: 'Hello World' });
 });
 
-app.listen(80, function () {
-  console.log('Listening on port 80!');
+app.listen(3000, function () {
+  console.log('Listening on port 3000!');
 });
