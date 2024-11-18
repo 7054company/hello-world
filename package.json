@@ -13,7 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.18.1",
-    "moment": "^2.29.1", // Add moment.js for date/time handling
-    "dotenv": "^16.0.3" // Add dotenv for environment variables management
+    "moment": "^2.29.1", 
+    "dotenv": "^16.0.3"
   }
 }
