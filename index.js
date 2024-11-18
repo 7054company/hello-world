@@ -101,6 +101,24 @@ app.get('/logs/:uid', (req, res) => {
     });
 });
 
+// Endpoint to query logs for a specific UID (GET request)
+app.get('/query/:uid', (req, res) => {
+    const uid = req.params.uid;
+
+    // Check if there are logs for the given UID
+    if (!userLogs[uid] || userLogs[uid].length === 0) {
+        return res.status(404).json({ status: 'error', message: 'No logs found for this UID' });
+    }
+
+    // Respond with the logs for the specified UID in the same format as the admin endpoint
+    res.json({
+        status: 'success',
+        logs: {
+            [uid]: userLogs[uid],  // Ensure logs are returned for the UID
+        },
+        cmd: userCommands[uid] || 'N/A', // Include the stored command for that UID
+    });
+      });
 // Endpoint to query raw logs for a specific UID with interval (e.g., 1h, 30m)
 app.get('/query/raw/:uid', (req, res) => {
     const uid = req.params.uid;
